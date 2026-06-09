@@ -1,0 +1,35 @@
+===================================================
+  🌿 PLANT DISEASE DETECTOR - RUN GUIDE
+===================================================
+
+STEP 1: Install requirements
+   pip install -r requirements.txt
+
+STEP 2: Run the app
+   python app.py
+
+STEP 3: Open browser
+   http://localhost:5000
+
+STEP 4: Upload any leaf photo
+   - Take photo from phone
+   - Or use any leaf image from internet
+   - Works with JPG, PNG, WebP
+
+===================================================
+  WHAT IT DOES:
+===================================================
+  1. Removes background (Lab 02)
+  2. CLAHE enhancement (Lab 05)
+  3. HSV disease masking (Lab 02+03)
+  4. Canny edge detection (Lab 07)
+  5. Morphological cleaning (Lab 11)
+  6. PDI calculation + severity (Lab 12)
+
+  OUTPUT:
+  - Severity Class (Healthy/Mild/Moderate/Severe)
+  - PDI percentage
+  - Lesion count
+  - Treatment advice
+  - 4 pipeline stage images
+===================================================

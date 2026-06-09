@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌿 Plant Disease Detector</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{
+  font-family:'Segoe UI',sans-serif;
+  background:#0a1a0b;
+  min-height:100vh;
+  color:#fff;
+}
+
+/* ── Header ── */
+.header{
+  background:linear-gradient(135deg,#0d2b0e,#1a4a1c);
+  padding:28px 20px;
+  text-align:center;
+  border-bottom:2px solid #27ae60;
+  position:relative;
+  overflow:hidden;
+}
+.header::before{
+  content:"";
+  position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 0%,rgba(39,174,96,0.15),transparent 70%);
+}
+.header h1{
+  font-size:2.2rem;color:#27ae60;
+  text-shadow:0 0 30px rgba(39,174,96,0.6);
+  position:relative;
+}
+.header p{color:#95a5a6;margin-top:6px;font-size:1rem;position:relative}
+.header small{color:#555;font-size:0.82rem;position:relative}
+
+/* ── Layout ── */
+.wrap{max-width:1100px;margin:0 auto;padding:28px 18px}
+.grid{display:grid;grid-template-columns:1fr 1.4fr;gap:22px}
+@media(max-width:750px){.grid{grid-template-columns:1fr}}
+
+/* ── Cards ── */
+.card{
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:16px;padding:22px;
+}
+.card-title{
+  font-size:1rem;font-weight:600;
+  color:#27ae60;margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;
+}
+
+/* ── Upload Zone ── */
+.zone{
+  border:2px dashed rgba(39,174,96,0.4);
+  border-radius:12px;padding:38px 16px;
+  text-align:center;cursor:pointer;
+  transition:.3s;
+}
+.zone:hover,.zone.over{
+  border-color:#27ae60;
+  background:rgba(39,174,96,0.07);
+}
+.zone-icon{font-size:3rem;margin-bottom:10px}
+.zone h3{color:#ecf0f1;margin-bottom:5px}
+.zone p{color:#666;font-size:.85rem}
+#fi{display:none}
+
+.preview{
+  width:100%;border-radius:10px;
+  margin-top:14px;display:none;
+  max-height:260px;object-fit:cover;
+  border:1px solid rgba(39,174,96,0.3);
+}
+
+.btn{
+  width:100%;padding:13px;margin-top:13px;
+  background:linear-gradient(135deg,#27ae60,#2ecc71);
+  color:#fff;border:none;border-radius:10px;
+  font-size:1rem;font-weight:600;cursor:pointer;
+  display:none;transition:.3s;
+}
+.btn:hover{
+  background:linear-gradient(135deg,#229954,#27ae60);
+  transform:translateY(-2px);
+  box-shadow:0 8px 25px rgba(39,174,96,0.35);
+}
+.btn:disabled{background:#333;cursor:not-allowed;transform:none}
+
+/* ── Result ── */
+.result{display:none}
+
+.banner{
+  border-radius:12px;padding:18px 20px;
+  margin-bottom:18px;
+  display:flex;align-items:center;gap:14px;
+}
+.b-icon{font-size:2.4rem}
+.b-name{font-size:1.35rem;font-weight:700}
+.b-sev{font-size:.88rem;opacity:.8;margin-top:3px}
+
+.conf-row{
+  display:flex;justify-content:space-between;
+  margin-bottom:5px;font-size:.88rem;color:#bdc3c7;
+}
+.bar-bg{
+  background:rgba(255,255,255,0.08);
+  border-radius:50px;height:9px;overflow:hidden;margin-bottom:14px;
+}
+.bar-fill{
+  height:100%;border-radius:50px;
+  background:linear-gradient(90deg,#27ae60,#2ecc71);
+  transition:width 1.2s ease;
+}
+
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.stat{
+  background:rgba(255,255,255,0.05);
+  border-radius:10px;padding:10px 12px;text-align:center;
+}
+.stat .lbl{font-size:.72rem;color:#95a5a6;margin-bottom:3px}
+.stat .val{font-size:1rem;font-weight:700;color:#ecf0f1}
+
+.info-box{
+  border-radius:10px;padding:13px 15px;margin-bottom:10px;
+}
+.info-box .lbl{font-size:.8rem;font-weight:600;margin-bottom:5px}
+.info-box p{font-size:.88rem;color:#bdc3c7;line-height:1.5}
+
+/* ── Image grid ── */
+.imgs{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:10px;margin-top:16px;
+}
+.img-wrap img{
+  width:100%;border-radius:9px;
+  border:1px solid rgba(255,255,255,0.08);
+  max-height:170px;object-fit:cover;
+}
+.img-wrap p{
+  text-align:center;font-size:.75rem;
+  color:#666;margin-top:4px;
+}
+
+/* ── Loading ── */
+.loading{display:none;text-align:center;padding:40px 20px}
+.spin{
+  width:48px;height:48px;
+  border:4px solid rgba(39,174,96,0.2);
+  border-top-color:#27ae60;border-radius:50%;
+  animation:spin 1s linear infinite;margin:0 auto 14px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Empty state ── */
+.empty{
+  text-align:center;padding:50px 20px;color:#333;
+}
+.empty .ei{font-size:3rem;margin-bottom:12px}
+.empty p{color:#444;font-size:.95rem}
+
+/* ── Steps ── */
+.steps{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:10px;margin-top:24px;
+}
+@media(max-width:550px){.steps{grid-template-columns:1fr 1fr}}
+.step{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:12px;padding:14px;text-align:center;
+}
+.step .sn{
+  width:30px;height:30px;background:#27ae60;
+  border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-weight:700;
+  margin:0 auto 8px;font-size:.9rem;
+}
+.step h4{font-size:.85rem;margin-bottom:4px;color:#ecf0f1}
+.step p{font-size:.75rem;color:#666}
+
+.footer{
+  text-align:center;padding:20px;
+  color:#333;font-size:.82rem;
+  border-top:1px solid rgba(255,255,255,0.04);
+  margin-top:28px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🌿 Plant Disease Detector</h1>
+  <p>Upload a real leaf photo — get instant disease analysis</p>
+  <small>COMP-342L · Digital Image Processing · PAF-IAST · Spring 2025</small>
+</div>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- LEFT: Upload -->
+  <div>
+    <div class="card">
+      <div class="card-title">📸 Upload Leaf Photo</div>
+
+      <div class="zone" id="zone"
+           onclick="document.getElementById('fi').click()"
+           ondragover="ev(event,'over')"
+           ondragleave="ev(event,'leave')"
+           ondrop="drop(event)">
+        <div class="zone-icon">🍃</div>
+        <h3>Drop your leaf photo here</h3>
+        <p>Or click to browse files</p>
+        <p style="margin-top:6px;color:#27ae60;font-size:.8rem">
+          JPG · PNG · WebP supported
+        </p>
+      </div>
+
+      <input type="file" id="fi" accept="image/*" onchange="pick(this)">
+      <img id="prev" class="preview" alt="preview">
+      <button class="btn" id="btn" onclick="detect()">🔍 Detect Disease Now</button>
+    </div>
+
+    <!-- Steps -->
+    <div class="steps">
+      <div class="step">
+        <div class="sn">1</div>
+        <h4>Upload</h4>
+        <p>Take a clear leaf photo</p>
+      </div>
+      <div class="step">
+        <div class="sn">2</div>
+        <h4>DIP</h4>
+        <p>HSV masking + Morphology</p>
+      </div>
+      <div class="step">
+        <div class="sn">3</div>
+        <h4>Analyse</h4>
+        <p>PDI calculation</p>
+      </div>
+      <div class="step">
+        <div class="sn">4</div>
+        <h4>Result</h4>
+        <p>Severity + Treatment</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Results -->
+  <div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+      <div class="spin"></div>
+      <p style="color:#27ae60;font-size:1rem">Analysing leaf...</p>
+      <p style="color:#555;font-size:.85rem;margin-top:5px">
+        Running DIP pipeline (6 stages)
+      </p>
+    </div>
+
+    <!-- Empty -->
+    <div class="card" id="empty">
+      <div class="card-title">📊 Detection Results</div>
+      <div class="empty">
+        <div class="ei">🔬</div>
+        <p>Upload a leaf image to see the analysis</p>
+        <p style="margin-top:8px;color:#333;font-size:.82rem">
+          Works with tomato, potato, pepper leaves and more
+        </p>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div class="card result" id="res">
+      <div class="card-title">📊 Detection Results</div>
+
+      <!-- Disease Banner -->
+      <div class="banner" id="banner">
+        <div class="b-icon" id="bicon"></div>
+        <div>
+          <div class="b-name" id="bname"></div>
+          <div class="b-sev" id="bsev"></div>
+        </div>
+      </div>
+
+      <!-- Confidence bar -->
+      <div class="conf-row">
+        <span>Detection Confidence</span>
+        <span id="confTxt" style="color:#27ae60;font-weight:600"></span>
+      </div>
+      <div class="bar-bg">
+        <div class="bar-fill" id="bar" style="width:0%"></div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats">
+        <div class="stat">
+          <div class="lbl">🦠 Disease Area</div>
+          <div class="val" id="sPdi"></div>
+        </div>
+        <div class="stat">
+          <div class="lbl">🔴 Lesion Count</div>
+          <div class="val" id="sLes"></div>
+        </div>
+        <div class="stat">
+          <div class="lbl">🍃 Leaf Area</div>
+          <div class="val" id="sLeaf"></div>
+        </div>
+      </div>
+
+      <!-- About -->
+      <div class="info-box" id="iDesc"
+           style="background:rgba(52,152,219,0.08);border-left:3px solid #3498db">
+        <div class="lbl" style="color:#3498db">📋 About This Condition</div>
+        <p id="descTxt"></p>
+      </div>
+
+      <!-- Treatment -->
+      <div class="info-box" id="iTreat"
+           style="background:rgba(39,174,96,0.08);border-left:3px solid #27ae60">
+        <div class="lbl" style="color:#27ae60">💊 Recommended Action</div>
+        <p id="treatTxt"></p>
+      </div>
+
+      <!-- Images -->
+      <div style="font-size:.85rem;color:#666;margin-top:16px;margin-bottom:8px">
+        🔬 Pipeline Stages
+      </div>
+      <div class="imgs">
+        <div class="img-wrap">
+          <img id="iOrig" src="" alt="Original">
+          <p>Original</p>
+        </div>
+        <div class="img-wrap">
+          <img id="iOver" src="" alt="Overlay">
+          <p>Disease Overlay</p>
+        </div>
+        <div class="img-wrap">
+          <img id="iEdge" src="" alt="Edges">
+          <p>Edge Detection</p>
+        </div>
+        <div class="img-wrap">
+          <img id="iMask" src="" alt="Mask">
+          <p>Disease Mask</p>
+        </div>
+      </div>
+
+    </div><!-- /result -->
+  </div><!-- /right -->
+
+</div><!-- /grid -->
+</div><!-- /wrap -->
+
+<div class="footer">
+  Plant Disease Detection · COMP-342L Project 06 · Sajjad Khan · PAF-IAST Spring 2025
+</div>
+
+<script>
+let file = null;
+
+const ABOUT = {
+  "Healthy":  "No disease detected! Your plant appears to be in good health with normal leaf coloration and no lesion patterns.",
+  "Mild":     "Early-stage disease detected. Small discolored patches or spots found. The plant can recover with timely care.",
+  "Moderate": "Significant disease present. Large portions of the leaf show infection. Immediate treatment is recommended.",
+  "Severe":   "Heavy infection detected. More than 50% of the leaf area is affected. The plant is at serious risk."
+};
+
+function ev(e, type) {
+  e.preventDefault();
+  document.getElementById('zone').classList.toggle('over', type==='over');
+}
+function drop(e) {
+  e.preventDefault();
+  document.getElementById('zone').classList.remove('over');
+  if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+}
+function pick(input) {
+  if(input.files[0]) handleFile(input.files[0]);
+}
+function handleFile(f) {
+  file = f;
+  const r = new FileReader();
+  r.onload = e => {
+    const prev = document.getElementById('prev');
+    prev.src = e.target.result;
+    prev.style.display = 'block';
+    const btn = document.getElementById('btn');
+    btn.style.display = 'block';
+  };
+  r.readAsDataURL(f);
+}
+
+async function detect() {
+  if(!file) return;
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('empty').style.display   = 'none';
+  document.getElementById('res').style.display     = 'none';
+  document.getElementById('btn').disabled = true;
+
+  const fd = new FormData();
+  fd.append('file', file);
+
+  try {
+    const resp = await fetch('/predict', {method:'POST', body:fd});
+    const data = await resp.json();
+    if(data.success) showResult(data);
+    else alert('Error: ' + data.error);
+  } catch(err) {
+    alert('Server error: ' + err.message);
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('btn').disabled = false;
+  }
+}
+
+function showResult(d) {
+  document.getElementById('res').style.display = 'block';
+
+  // Banner
+  const banner = document.getElementById('banner');
+  banner.style.background = d.color + '22';
+  banner.style.border     = '1px solid ' + d.color + '55';
+  document.getElementById('bicon').textContent = d.icon;
+  document.getElementById('bname').textContent = d.severity + ' — ' + d.badge;
+  document.getElementById('bname').style.color = d.color;
+  document.getElementById('bsev').textContent  = 'Plant Disease Index: ' + d.pdi + '%';
+
+  // Confidence (PDI based)
+  const conf = Math.min(100, 100 - d.pdi/2 + (d.severity==='Healthy'?40:0));
+  document.getElementById('confTxt').textContent = d.pdi.toFixed(1) + '% disease area';
+  setTimeout(() => {
+    document.getElementById('bar').style.width = Math.min(d.pdi * 1.5, 100) + '%';
+    const col = d.color;
+    document.getElementById('bar').style.background =
+      `linear-gradient(90deg, ${col}88, ${col})`;
+  }, 100);
+
+  // Stats
+  document.getElementById('sPdi').textContent   = d.pdi + '%';
+  document.getElementById('sLes').textContent   = d.lesions;
+  document.getElementById('sLeaf').textContent  =
+    (d.leaf_area / 1000).toFixed(0) + 'K px';
+
+  // Text
+  document.getElementById('descTxt').textContent  = ABOUT[d.severity] || '';
+  document.getElementById('treatTxt').textContent = d.treatment;
+
+  // Images
+  document.getElementById('iOrig').src = 'data:image/jpeg;base64,' + d.original;
+  document.getElementById('iOver').src = 'data:image/jpeg;base64,' + d.overlay;
+  document.getElementById('iEdge').src = 'data:image/jpeg;base64,' + d.edge;
+  document.getElementById('iMask').src = 'data:image/jpeg;base64,' + d.mask;
+}
+</script>
+</body>
+</html>
